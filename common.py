@@ -1,5 +1,4 @@
-from socket import gethostbyname, gethostname
-
+import socket
 
 # Screen settings
 WIDTH = 800
@@ -17,12 +16,12 @@ GREEN = (0, 255, 0)
 BLUE  = (0, 0, 255)
 
 # Game
-HOST = gethostbyname(gethostname())
+HOST = socket.gethostbyname(socket.gethostname())
 PORT = 9090
 
 
 class PlayerCommon:
     def __init__(self, x, y, conn) -> None:
-        self.x = x
-        self.y = y
-        self.conn = conn
+        self.x : int = x
+        self.y : int = y
+        self.conn : socket.socket = conn
