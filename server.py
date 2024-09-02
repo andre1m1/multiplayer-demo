@@ -73,6 +73,7 @@ if __name__ == "__main__":
 
     while True:
         client_sock, addr = server.accept()
+        logging.info(f"Client connected: {addr}")
         client_thread = threading.Thread(target=handle_client, args=(client_sock, addr))
         client_thread.start()
 
