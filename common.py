@@ -24,4 +24,4 @@ class Player:
     def __init__(self, x, y, conn) -> None:
         self.x : int = x
         self.y : int = y
-        self.conn : socket.socket = conn
+        self.conn : socket.socket | None = conn

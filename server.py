@@ -14,7 +14,6 @@ class ServerPlayer(Player):
         self.id = len(players_list) 
 
 
-
 def close_conn(conn, addr, with_err: Err = None) -> None:
     conn.close()
     if with_err:
@@ -23,6 +22,17 @@ def close_conn(conn, addr, with_err: Err = None) -> None:
     else:
         logging.info(f"Client {addr} disconnected!")
 
+
+def serialize_players(players_list : list[ServerPlayer]) -> list[dict]:
+    players = []
+
+    for player in players_list:
+        players.append({
+            "x" : player.x,
+            "y" : player.y
+        })
+
+    return players
 
 
 def handle_connection(client : socket.socket, addr : str) -> ServerPlayer | None:
@@ -34,24 +44,30 @@ def handle_connection(client : socket.socket, addr : str) -> ServerPlayer | None
         if hello_msg["type"] != "hello":
             close_conn(client, addr)
             return None
-        
+
         player = ServerPlayer(random.randrange(WIDTH), random.randrange(HEIGHT), client)
         players_list.append(player)
 
         player.conn.sendall(json.dumps({
-            "type": "pos",
+            "type" : "init",
             "x": player.x,
-            "y": player.y
+            "y": player.y,
+            "players" : serialize_players(players_list)
         }).encode("utf-8"))
+
+        for p in players_list:
+            p.conn.sendall(json.dumps({
+                "type" : "player_joined",
+                'x' : player.x,
+                'y' : player.y
+            }).encode("utf-8"))
 
         return player
 
-
     except Exception as e:
         close_conn(client, addr, e)
+        players_list.remove(player)
         return None
-
-
 
 
 def handle_client(client : socket.socket, addr : str) -> None:
@@ -64,9 +80,11 @@ def handle_client(client : socket.socket, addr : str) -> None:
             
             except Exception as e:
                 close_conn(client, addr, e)
+                players_list.remove(player)
                 break
     
     return
+
 
 if __name__ == "__main__":
     
