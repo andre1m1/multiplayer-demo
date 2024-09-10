@@ -21,9 +21,10 @@ HOST = socket.gethostbyname(socket.gethostname())
 PORT = 9090
 
 class Player:
-    def __init__(self, x, y, conn) -> None:
+    def __init__(self, x, y, id, conn) -> None:
         self.x : int = x
         self.y : int = y
+        self.id : int = id
         self.conn : socket.socket | None = conn
 
 

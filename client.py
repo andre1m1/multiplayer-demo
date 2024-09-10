@@ -9,8 +9,8 @@ from common import *
 pygame.init()
 
 class ClientPlayer(Player):
-    def __init__(self, x : int, y : int, conn = None) -> None:
-        super().__init__(x, y, conn)
+    def __init__(self, x : int, y : int, id : int, conn = None) -> None:
+        super().__init__(x, y, id, conn)
         self.rect = pygame.Rect(self.x, self.y, 60, 60)
 
     def __str__(self):
@@ -31,14 +31,14 @@ def connect_to_server() -> ClientPlayer:
         conn_socket.sendall(json.dumps(msg).encode("utf-8"))
 
         msg = json.loads(conn_socket.recv(1024))
-
         if msg["type"] != MessageType.INIT.value:
             raise Exception("ERROR: Could not receive intial player data from server!")
         
-        for p in msg["players"]:
-            players_list.append(ClientPlayer(p["x"], p["y"]))
 
-        player = ClientPlayer(msg["x"], msg["y"], conn_socket)
+        for p in msg["players"]:
+            players_list.append(ClientPlayer(p["x"], p["y"], p["id"]))
+
+        player = ClientPlayer(msg["x"], msg["y"], msg["id"], conn_socket)
 
     except Exception as e:
         print(e)
@@ -54,7 +54,7 @@ def handle_recv(conn) -> None:
             msg : dict  = json.loads(conn.recv(1024))
             match msg["type"]:
                 case MessageType.PLAYER_JOINED.value:
-                    players_list.append(ClientPlayer(msg['x'], msg['y']))
+                    players_list.append(ClientPlayer(msg['x'], msg['y'], msg["id"]))
 
                 case _:
                     raise Exception(f"Received unknown server message! : {msg}")

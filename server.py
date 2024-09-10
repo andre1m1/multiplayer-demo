@@ -8,10 +8,15 @@ from common import *
 
 type Err = Exception | None
 
+id_count = 0
+def iota():
+    global id_count
+    id_count += 1
+    return id_count
+
 class ServerPlayer(Player):
     def __init__(self, x : int, y : int, conn : socket.socket) -> None:
-        super().__init__(x, y, conn)
-        self.id = len(players_list) 
+        super().__init__(x, y, iota(), conn)
 
 
 def close_conn(conn, addr, with_err: Err = None) -> None:
@@ -29,7 +34,8 @@ def serialize_players(players_list : list[ServerPlayer]) -> list[dict]:
     for player in players_list:
         players.append({
             "x" : player.x,
-            "y" : player.y
+            "y" : player.y,
+            "id" : player.id
         })
 
     return players
@@ -52,6 +58,7 @@ def handle_connection(client : socket.socket, addr : str) -> ServerPlayer | None
             "type" : MessageType.INIT.value,
             "x": player.x,
             "y": player.y,
+            "id": player.id,
             "players" : serialize_players(players_list)
         }).encode("utf-8"))
 
@@ -59,7 +66,8 @@ def handle_connection(client : socket.socket, addr : str) -> ServerPlayer | None
             p.conn.sendall(json.dumps({
                 "type" : MessageType.PLAYER_JOINED.value,
                 'x' : player.x,
-                'y' : player.y
+                'y' : player.y,
+                "id": player.id
             }).encode("utf-8"))
 
         return player
@@ -76,7 +84,11 @@ def handle_client(client : socket.socket, addr : str) -> None:
     if type(player) == ServerPlayer: 
         while True:
             try:
-                buff = player.conn.recv(1024)
+                msg = json.loads(player.conn.recv(1024))
+                match msg["type"]:
+                
+                    case _:
+                        raise Exception("Unknown Message received from client")
             
             except Exception as e:
                 close_conn(client, addr, e)
