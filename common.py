@@ -1,4 +1,5 @@
 import socket
+from enum import Enum, auto
 
 # Screen settings
 WIDTH = 800
@@ -19,9 +20,15 @@ BLUE  = (0, 0, 255)
 HOST = socket.gethostbyname(socket.gethostname())
 PORT = 9090
 
-
 class Player:
     def __init__(self, x, y, conn) -> None:
         self.x : int = x
         self.y : int = y
         self.conn : socket.socket | None = conn
+
+
+class MessageType(Enum):
+    HELLO         = auto()
+    INIT          = auto()
+    PLAYER_JOINED = auto()
+

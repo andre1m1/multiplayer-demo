@@ -5,6 +5,7 @@ import threading
 import json
 from common import *
 
+
 pygame.init()
 
 class ClientPlayer(Player):
@@ -24,14 +25,14 @@ def connect_to_server() -> ClientPlayer:
     conn_socket.connect((HOST, PORT))
     try:
         msg : dict = json.loads(conn_socket.recv(1024))
-        if msg["type"] != "hello":
+        if msg["type"] != MessageType.HELLO.value:
             raise Exception("ERROR: Could not properly comunicate with server! ")
             
         conn_socket.sendall(json.dumps(msg).encode("utf-8"))
 
         msg = json.loads(conn_socket.recv(1024))
 
-        if msg["type"] != "init":
+        if msg["type"] != MessageType.INIT.value:
             raise Exception("ERROR: Could not receive intial player data from server!")
         
         for p in msg["players"]:
@@ -52,8 +53,7 @@ def handle_recv(conn) -> None:
         while True:
             msg : dict  = json.loads(conn.recv(1024))
             match msg["type"]:
-                case "player_joined":
-                    pass
+                case MessageType.PLAYER_JOINED.value:
                     players_list.append(ClientPlayer(msg['x'], msg['y']))
 
                 case _:

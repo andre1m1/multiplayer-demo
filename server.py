@@ -37,11 +37,11 @@ def serialize_players(players_list : list[ServerPlayer]) -> list[dict]:
 
 def handle_connection(client : socket.socket, addr : str) -> ServerPlayer | None:
     try:
-        client.sendall(json.dumps({"type" : "hello"}).encode("utf-8"))
+        client.sendall(json.dumps({"type" : MessageType.HELLO.value}).encode("utf-8"))
 
         hello_msg : dict = json.loads(client.recv(1024))
 
-        if hello_msg["type"] != "hello":
+        if hello_msg["type"] != MessageType.HELLO.value:
             close_conn(client, addr)
             return None
 
@@ -49,7 +49,7 @@ def handle_connection(client : socket.socket, addr : str) -> ServerPlayer | None
         players_list.append(player)
 
         player.conn.sendall(json.dumps({
-            "type" : "init",
+            "type" : MessageType.INIT.value,
             "x": player.x,
             "y": player.y,
             "players" : serialize_players(players_list)
@@ -57,7 +57,7 @@ def handle_connection(client : socket.socket, addr : str) -> ServerPlayer | None
 
         for p in players_list:
             p.conn.sendall(json.dumps({
-                "type" : "player_joined",
+                "type" : MessageType.PLAYER_JOINED.value,
                 'x' : player.x,
                 'y' : player.y
             }).encode("utf-8"))
