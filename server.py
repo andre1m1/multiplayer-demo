@@ -8,7 +8,7 @@ from common import *
 
 type Err = Exception | None
 
-class Player(PlayerCommon):
+class ServerPlayer(Player):
     def __init__(self, x : int, y : int, conn : socket.socket) -> None:
         super().__init__(x, y, conn)
         self.id = len(players_list) 
@@ -25,7 +25,7 @@ def close_conn(conn, addr, with_err: Err = None) -> None:
 
 
 
-def handle_client(client : socket.socket, addr : str) -> None:
+def handle_connection(client : socket.socket, addr : str) -> ServerPlayer | None:
     try:
         client.sendall(json.dumps({"type" : "hello"}).encode("utf-8"))
 
@@ -33,9 +33,9 @@ def handle_client(client : socket.socket, addr : str) -> None:
 
         if hello_msg["type"] != "hello":
             close_conn(client, addr)
-            return
+            return None
         
-        player = Player(random.randrange(WIDTH), random.randrange(HEIGHT), client)
+        player = ServerPlayer(random.randrange(WIDTH), random.randrange(HEIGHT), client)
         players_list.append(player)
 
         player.conn.sendall(json.dumps({
@@ -44,24 +44,33 @@ def handle_client(client : socket.socket, addr : str) -> None:
             "y": player.y
         }).encode("utf-8"))
 
+        return player
 
 
     except Exception as e:
         close_conn(client, addr, e)
-        return
+        return None
 
-    while True:
-        try:
-            buff = player.conn.recv(1024)
-        
-        except Exception as e:
-            close_conn(client, addr, e)
-            break
-        
+
+
+
+def handle_client(client : socket.socket, addr : str) -> None:
+    player = handle_connection(client, addr)
+    
+    if type(player) == ServerPlayer: 
+        while True:
+            try:
+                buff = player.conn.recv(1024)
+            
+            except Exception as e:
+                close_conn(client, addr, e)
+                break
+    
+    return
 
 if __name__ == "__main__":
     
-    players_list : list[Player] = []
+    players_list : list[ServerPlayer] = []
     format = "%(asctime)s: %(message)s"
     logging.basicConfig(format=format, level=logging.INFO, datefmt="%H:%M:%S")
 

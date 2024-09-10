@@ -20,7 +20,7 @@ HOST = socket.gethostbyname(socket.gethostname())
 PORT = 9090
 
 
-class PlayerCommon:
+class Player:
     def __init__(self, x, y, conn) -> None:
         self.x : int = x
         self.y : int = y

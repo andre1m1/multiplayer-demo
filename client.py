@@ -6,16 +6,16 @@ from common import *
 
 pygame.init()
 
-class Player(PlayerCommon):
+class ClientPlayer(Player):
     def __init__(self, x, y, conn) -> None:
         super().__init__(x, y, conn)
         self.rect = pygame.Rect(self.x, self.y, 60, 60)
 
-    def draw_self(self, screen : pygame.Surface):
+    def draw_self(self, screen : pygame.Surface) -> None:
         pygame.draw.rect(screen, RED, self.rect)
 
 
-def connect_to_server() -> Player:
+def connect_to_server() -> ClientPlayer:
     conn_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     conn_socket.connect((HOST, PORT))
     try:
@@ -30,7 +30,7 @@ def connect_to_server() -> Player:
         if msg["type"] != "pos":
             raise Exception("ERROR: Could not receive intial player data from server!")
         
-        player = Player(msg["x"], msg["y"], conn_socket)
+        player = ClientPlayer(msg["x"], msg["y"], conn_socket)
 
     except Exception as e:
         print(e)
@@ -38,6 +38,7 @@ def connect_to_server() -> Player:
         sys.exit(1)
 
     return player
+
 
 def main() -> None:
     screen : pygame.Surface = pygame.display.set_mode((WIDTH, HEIGHT))
