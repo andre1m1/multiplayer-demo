@@ -41,6 +41,11 @@ def serialize_players(players_list : list[ServerPlayer]) -> list[dict]:
     return players
 
 
+def broadcast_msg(msg: dict) -> None:
+    for p in players_list:
+        p.conn.sendall(json.dumps(msg).encode("utf-8"))
+
+
 def handle_connection(client : socket.socket, addr : str) -> ServerPlayer | None:
     try:
         client.sendall(json.dumps({"type" : MessageType.HELLO.value}).encode("utf-8"))
@@ -62,13 +67,13 @@ def handle_connection(client : socket.socket, addr : str) -> ServerPlayer | None
             "players" : serialize_players(players_list)
         }).encode("utf-8"))
 
-        for p in players_list:
-            p.conn.sendall(json.dumps({
-                "type" : MessageType.PLAYER_JOINED.value,
-                'x' : player.x,
-                'y' : player.y,
-                "id": player.id
-            }).encode("utf-8"))
+
+        broadcast_msg({
+            "type" : MessageType.PLAYER_JOINED.value,
+            'x' : player.x,
+            'y' : player.y,
+            "id": player.id
+        })
 
         return player
 
@@ -86,16 +91,22 @@ def handle_client(client : socket.socket, addr : str) -> None:
             try:
                 msg = json.loads(player.conn.recv(1024))
                 match msg["type"]:
+                    case MessageType.PLAYER_LEFT.value:
+                        close_conn(player.conn, addr)
+                        players_list.remove(player)
+                        broadcast_msg({
+                            "type" : MessageType.PLAYER_LEFT.value,
+                            "id" : player.id
+                        })
                 
                     case _:
                         raise Exception("Unknown Message received from client")
+
             
             except Exception as e:
                 close_conn(client, addr, e)
                 players_list.remove(player)
                 break
-    
-    return
 
 
 if __name__ == "__main__":

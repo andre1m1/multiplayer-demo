@@ -34,7 +34,7 @@ def connect_to_server() -> ClientPlayer:
         if msg["type"] != MessageType.INIT.value:
             raise Exception("ERROR: Could not receive intial player data from server!")
         
-
+        
         for p in msg["players"]:
             players_list.append(ClientPlayer(p["x"], p["y"], p["id"]))
 
@@ -55,6 +55,11 @@ def handle_recv(conn) -> None:
             match msg["type"]:
                 case MessageType.PLAYER_JOINED.value:
                     players_list.append(ClientPlayer(msg['x'], msg['y'], msg["id"]))
+                
+                case MessageType.PLAYER_LEFT.value:
+                    for p in players_list:
+                        if p.id == msg["id"]:
+                            players_list.remove(p)
 
                 case _:
                     raise Exception(f"Received unknown server message! : {msg}")
@@ -78,6 +83,7 @@ if __name__ == "__main__":
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT or (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE):
+                player.conn.sendall(json.dumps({"type": MessageType.PLAYER_LEFT.value}).encode("utf-8"))
                 player.conn.close()
                 pygame.quit()
                 print("Exit Succesfully")

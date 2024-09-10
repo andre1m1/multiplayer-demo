@@ -32,4 +32,5 @@ class MessageType(Enum):
     HELLO         = auto()
     INIT          = auto()
     PLAYER_JOINED = auto()
+    PLAYER_LEFT   = auto()
 
