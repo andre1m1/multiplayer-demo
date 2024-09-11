@@ -6,7 +6,6 @@ import logging
 from common import *
 
 
-type Err = Exception | None
 
 id_count = 0
 def iota():
@@ -103,7 +102,20 @@ def handle_client(client : socket.socket, addr : str) -> None:
                             "id" : player.id
                         })
                         break
-                
+
+                    case MessageType.PLAYER_MOVE.value:
+                        for move in msg["moves"]:
+                            if 'x' in move:
+                                player.x += move['x']
+                            else:
+                                player.y += move['y']
+
+                        broadcast_msg({
+                            "type" : MessageType.PLAYER_MOVE.value,
+                            "id" : player.id,
+                            "pos" : (player.x, player.y)
+                        }, exclude=player.id)
+
                     case _:
                         raise Exception("Unknown Message received from client")
 

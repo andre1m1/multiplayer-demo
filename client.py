@@ -56,12 +56,20 @@ def handle_recv(conn : socket.socket) -> None:
                     print("Player Joined!")
                     players_list.append(ClientPlayer(msg['x'], msg['y'], msg["id"]))
                 
+                    continue
                 case MessageType.PLAYER_LEFT.value:
                     for p in players_list:
                         if p.id == msg["id"]:
                             players_list.remove(p)
                             print("Player Left!")
+                    continue
 
+                case MessageType.PLAYER_MOVE.value:
+                    for p in players_list:
+                        if p.id == msg["id"]:
+                            p.x, p.y = msg["pos"]
+
+                    continue
                 case _:
                     raise Exception(f"Received unknown server message! : {msg}")
 
@@ -71,12 +79,15 @@ def handle_recv(conn : socket.socket) -> None:
         sys.exit(1)
 
 
+def serialize_msg(msg: dict)-> bytes:
+    return json.dumps(msg).encode("utf-8")
+
 if __name__ == "__main__":
     screen : pygame.Surface = pygame.display.set_mode((WIDTH, HEIGHT))
     clock : pygame.time.Clock = pygame.time.Clock()
     pygame.display.set_caption("Multiplayer Demo")
     players_list: list[ClientPlayer] = []
-
+    move_events : list[Move] = []
     player = connect_to_server()
     player_thread = threading.Thread(target=handle_recv, args=(player.conn,))
     player_thread.start()
@@ -85,12 +96,37 @@ if __name__ == "__main__":
         while True:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT or (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE):
-                    player.conn.sendall(json.dumps({"type": MessageType.PLAYER_LEFT.value}).encode("utf-8"))
+                    player.conn.sendall(serialize_msg({"type": MessageType.PLAYER_LEFT.value}))
                     player.conn.close()
+                    player_thread.join()
                     pygame.quit()
                     print("Exit Succesfully")
                     sys.exit(0)
 
+                elif event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_w:
+                        player.y -= MOVE_SPEED
+                        move_events.append({'y' : -MOVE_SPEED})
+                    
+                    elif event.key == pygame.K_s:
+                        player.y += MOVE_SPEED
+                        move_events.append({'y' : MOVE_SPEED})
+                    
+                    elif event.key == pygame.K_a:
+                        player.x -= MOVE_SPEED
+                        move_events.append({'x' : -MOVE_SPEED})
+                    
+                    elif event.key == pygame.K_d:
+                        player.x += MOVE_SPEED
+                        move_events.append({'x' : MOVE_SPEED})
+                    
+            if len(move_events) > 0:
+                msg = {
+                    "type" : MessageType.PLAYER_MOVE.value,
+                    "moves": move_events
+                }
+                player.conn.sendall(serialize_msg(msg))
+                move_events.clear()
 
             screen.fill(BLACK)
             player.draw_self(screen)
@@ -103,3 +139,4 @@ if __name__ == "__main__":
 
     else:
         print("ERROR: Could not connect to the server!")
+ 

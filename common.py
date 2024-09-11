@@ -20,6 +20,11 @@ BLUE  = (0, 0, 255)
 # Game
 HOST = socket.gethostbyname(socket.gethostname())
 PORT = 9090
+MOVE_SPEED = 10
+
+type Move = dict[str , int]
+type Err = Exception | None
+
 
 class Player:
     def __init__(self, x : int, y : int, id : int, conn : Optional[socket.socket]) -> None:
@@ -36,10 +41,10 @@ class Player:
         return f"Player(X: {self.x}, Y: {self.y}, Connection: {self.conn})"
 
 
-
 class MessageType(Enum):
     HELLO         = auto()
     INIT          = auto()
     PLAYER_JOINED = auto()
     PLAYER_LEFT   = auto()
+    PLAYER_MOVE   = auto()
 
