@@ -41,9 +41,10 @@ def serialize_players(players_list : list[ServerPlayer]) -> list[dict]:
     return players
 
 
-def broadcast_msg(msg: dict) -> None:
+def broadcast_msg(msg: dict, exclude=None) -> None:
     for p in players_list:
-        p.conn.sendall(json.dumps(msg).encode("utf-8"))
+        if p.conn is not None and p.id != exclude:
+            p.conn.sendall(json.dumps(msg).encode("utf-8"))
 
 
 def handle_connection(client : socket.socket, addr : str) -> ServerPlayer | None:
@@ -56,8 +57,10 @@ def handle_connection(client : socket.socket, addr : str) -> ServerPlayer | None
             close_conn(client, addr)
             return None
 
-        player = ServerPlayer(random.randrange(WIDTH), random.randrange(HEIGHT), client)
-        players_list.append(player)
+        player = ServerPlayer(random.randrange(WIDTH), random.randrange(HEIGHT), conn=client)
+
+        if player.conn is None:
+            raise Exception("Could not receive client connection!")
 
         player.conn.sendall(json.dumps({
             "type" : MessageType.INIT.value,
@@ -67,13 +70,14 @@ def handle_connection(client : socket.socket, addr : str) -> ServerPlayer | None
             "players" : serialize_players(players_list)
         }).encode("utf-8"))
 
+        players_list.append(player)
 
         broadcast_msg({
             "type" : MessageType.PLAYER_JOINED.value,
             'x' : player.x,
             'y' : player.y,
             "id": player.id
-        })
+        }, exclude=player.id)
 
         return player
 
@@ -85,8 +89,8 @@ def handle_connection(client : socket.socket, addr : str) -> ServerPlayer | None
 
 def handle_client(client : socket.socket, addr : str) -> None:
     player = handle_connection(client, addr)
-    
-    if type(player) == ServerPlayer: 
+
+    if type(player) == ServerPlayer and player.conn is not None: 
         while True:
             try:
                 msg = json.loads(player.conn.recv(1024))
@@ -98,6 +102,7 @@ def handle_client(client : socket.socket, addr : str) -> None:
                             "type" : MessageType.PLAYER_LEFT.value,
                             "id" : player.id
                         })
+                        break
                 
                     case _:
                         raise Exception("Unknown Message received from client")

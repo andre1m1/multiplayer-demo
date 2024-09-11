@@ -1,5 +1,6 @@
 import socket
 from enum import Enum, auto
+from typing import Optional
 
 # Screen settings
 WIDTH = 800
@@ -21,11 +22,19 @@ HOST = socket.gethostbyname(socket.gethostname())
 PORT = 9090
 
 class Player:
-    def __init__(self, x, y, id, conn) -> None:
-        self.x : int = x
-        self.y : int = y
-        self.id : int = id
-        self.conn : socket.socket | None = conn
+    def __init__(self, x : int, y : int, id : int, conn : Optional[socket.socket]) -> None:
+        self.x = x
+        self.y = y
+        self.id = id
+        self.conn = conn
+    
+    def __str__(self) -> str:
+        return f"X: {self.x}, Y: {self.y}, Connection: {self.conn}"
+
+    
+    def __repr__(self) -> str:
+        return f"Player(X: {self.x}, Y: {self.y}, Connection: {self.conn})"
+
 
 
 class MessageType(Enum):

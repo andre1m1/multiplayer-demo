@@ -13,10 +13,9 @@ class ClientPlayer(Player):
         super().__init__(x, y, id, conn)
         self.rect = pygame.Rect(self.x, self.y, 60, 60)
 
-    def __str__(self):
-        return f"X: {self.x}, Y: {self.y}, Connection: {self.conn}"
-
     def draw_self(self, screen : pygame.Surface) -> None:
+        self.rect.x = self.x
+        self.rect.y = self.y
         pygame.draw.rect(screen, RED, self.rect)
 
 
@@ -34,7 +33,7 @@ def connect_to_server() -> ClientPlayer:
         if msg["type"] != MessageType.INIT.value:
             raise Exception("ERROR: Could not receive intial player data from server!")
         
-        
+
         for p in msg["players"]:
             players_list.append(ClientPlayer(p["x"], p["y"], p["id"]))
 
@@ -48,18 +47,20 @@ def connect_to_server() -> ClientPlayer:
     return player
 
 
-def handle_recv(conn) -> None:
+def handle_recv(conn : socket.socket) -> None:
     try:
         while True:
             msg : dict  = json.loads(conn.recv(1024))
             match msg["type"]:
                 case MessageType.PLAYER_JOINED.value:
+                    print("Player Joined!")
                     players_list.append(ClientPlayer(msg['x'], msg['y'], msg["id"]))
                 
                 case MessageType.PLAYER_LEFT.value:
                     for p in players_list:
                         if p.id == msg["id"]:
                             players_list.remove(p)
+                            print("Player Left!")
 
                 case _:
                     raise Exception(f"Received unknown server message! : {msg}")
@@ -80,22 +81,25 @@ if __name__ == "__main__":
     player_thread = threading.Thread(target=handle_recv, args=(player.conn,))
     player_thread.start()
 
-    while True:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT or (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE):
-                player.conn.sendall(json.dumps({"type": MessageType.PLAYER_LEFT.value}).encode("utf-8"))
-                player.conn.close()
-                pygame.quit()
-                print("Exit Succesfully")
-                sys.exit(0)
-
-        screen.fill(BLACK)
-        player.draw_self(screen)
-
-        for p in players_list:
-            p.draw_self(screen)
-
-        pygame.display.update()
-        clock.tick(FPS)
+    if player.conn is not None:
+        while True:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT or (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE):
+                    player.conn.sendall(json.dumps({"type": MessageType.PLAYER_LEFT.value}).encode("utf-8"))
+                    player.conn.close()
+                    pygame.quit()
+                    print("Exit Succesfully")
+                    sys.exit(0)
 
 
+            screen.fill(BLACK)
+            player.draw_self(screen)
+
+            for p in players_list:
+                p.draw_self(screen)
+
+            pygame.display.update()
+            clock.tick(FPS)
+
+    else:
+        print("ERROR: Could not connect to the server!")
