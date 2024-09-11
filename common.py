@@ -20,7 +20,7 @@ BLUE  = (0, 0, 255)
 # Game
 HOST = socket.gethostbyname(socket.gethostname())
 PORT = 9090
-MOVE_SPEED = 10
+MOVE_SPEED = 20
 
 type Move = dict[str , int]
 type Err = Exception | None

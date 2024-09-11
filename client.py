@@ -85,7 +85,9 @@ def serialize_msg(msg: dict)-> bytes:
 if __name__ == "__main__":
     screen : pygame.Surface = pygame.display.set_mode((WIDTH, HEIGHT))
     clock : pygame.time.Clock = pygame.time.Clock()
+    font = pygame.font.Font(size=30)
     pygame.display.set_caption("Multiplayer Demo")
+
     players_list: list[ClientPlayer] = []
     move_events : list[Move] = []
     player = connect_to_server()
@@ -133,6 +135,9 @@ if __name__ == "__main__":
 
             for p in players_list:
                 p.draw_self(screen)
+
+            text = font.render(f"FPS: {str(int(clock.get_fps()))}", True, WHITE)
+            screen.blit(text, (12, 12))
 
             pygame.display.update()
             clock.tick(FPS)
