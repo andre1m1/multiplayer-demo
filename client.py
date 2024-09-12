@@ -9,14 +9,17 @@ from common import *
 pygame.init()
 
 class ClientPlayer(Player):
-    def __init__(self, x : int, y : int, id : int, conn = None) -> None:
-        super().__init__(x, y, id, conn)
-        self.rect = pygame.Rect(self.x, self.y, 60, 60)
+    def __init__(self, x: int, y: int, id: int, color: Color, conn = None) -> None:
+        super().__init__(x, y, id, color, conn)
+        self.rect = pygame.Rect(self.x, self.y, PLAYER_SIZE, PLAYER_SIZE)
+
 
     def draw_self(self, screen : pygame.Surface) -> None:
         self.rect.x = self.x
         self.rect.y = self.y
-        pygame.draw.rect(screen, RED, self.rect)
+        pygame.draw.rect(screen, self.color, self.rect)
+        if self.conn is not None:
+            pygame.draw.rect(screen, WHITE, (self.x - 1, self.y - 1, PLAYER_SIZE + 1, PLAYER_SIZE + 1), 2)
 
 
 def connect_to_server() -> ClientPlayer:
@@ -35,9 +38,9 @@ def connect_to_server() -> ClientPlayer:
         
 
         for p in msg["players"]:
-            players_list.append(ClientPlayer(p["x"], p["y"], p["id"]))
+            players_list.append(ClientPlayer(p["x"], p["y"], p["id"], p["color"]))
 
-        player = ClientPlayer(msg["x"], msg["y"], msg["id"], conn_socket)
+        player = ClientPlayer(msg["x"], msg["y"], msg["id"], msg["color"], conn_socket)
 
     except Exception as e:
         print(e)
@@ -54,9 +57,9 @@ def handle_recv(conn : socket.socket) -> None:
             match msg["type"]:
                 case MessageType.PLAYER_JOINED.value:
                     print("Player Joined!")
-                    players_list.append(ClientPlayer(msg['x'], msg['y'], msg["id"]))
-                
+                    players_list.append(ClientPlayer(msg['x'], msg['y'], msg["id"], msg["color"]))
                     continue
+                
                 case MessageType.PLAYER_LEFT.value:
                     for p in players_list:
                         if p.id == msg["id"]:

@@ -14,8 +14,8 @@ def iota():
     return id_count
 
 class ServerPlayer(Player):
-    def __init__(self, x : int, y : int, conn : socket.socket) -> None:
-        super().__init__(x, y, iota(), conn)
+    def __init__(self, x: int, y: int, color: Color, conn: socket.socket) -> None:
+        super().__init__(x, y, iota(), color, conn)
 
 
 def close_conn(conn, addr, with_err: Err = None) -> None:
@@ -34,7 +34,8 @@ def serialize_players(players_list : list[ServerPlayer]) -> list[dict]:
         players.append({
             "x" : player.x,
             "y" : player.y,
-            "id" : player.id
+            "id" : player.id,
+            "color" : player.color
         })
 
     return players
@@ -46,6 +47,9 @@ def broadcast_msg(msg: dict, exclude=None) -> None:
             p.conn.sendall(json.dumps(msg).encode("utf-8"))
 
 
+def get_random_color() -> Color:
+    return (random.randrange(255), random.randrange(255), random.randrange(255))
+
 def handle_connection(client : socket.socket, addr : str) -> ServerPlayer | None:
     try:
         client.sendall(json.dumps({"type" : MessageType.HELLO.value}).encode("utf-8"))
@@ -56,7 +60,7 @@ def handle_connection(client : socket.socket, addr : str) -> ServerPlayer | None
             close_conn(client, addr)
             return None
 
-        player = ServerPlayer(random.randrange(WIDTH), random.randrange(HEIGHT), conn=client)
+        player = ServerPlayer(random.randrange(WIDTH-PLAYER_SIZE), random.randrange(HEIGHT - PLAYER_SIZE), get_random_color(), conn=client)
 
         if player.conn is None:
             raise Exception("Could not receive client connection!")
@@ -66,6 +70,7 @@ def handle_connection(client : socket.socket, addr : str) -> ServerPlayer | None
             "x": player.x,
             "y": player.y,
             "id": player.id,
+            "color": player.color,
             "players" : serialize_players(players_list)
         }).encode("utf-8"))
 
@@ -75,7 +80,8 @@ def handle_connection(client : socket.socket, addr : str) -> ServerPlayer | None
             "type" : MessageType.PLAYER_JOINED.value,
             'x' : player.x,
             'y' : player.y,
-            "id": player.id
+            "id": player.id,
+            "color": player.color
         }, exclude=player.id)
 
         return player

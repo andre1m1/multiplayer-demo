@@ -21,16 +21,18 @@ BLUE  = (0, 0, 255)
 HOST = socket.gethostbyname(socket.gethostname())
 PORT = 9090
 MOVE_SPEED = 20
+PLAYER_SIZE = 60
 
 type Move = dict[str , int]
 type Err = Exception | None
-
+type Color = tuple[int, int, int]
 
 class Player:
-    def __init__(self, x : int, y : int, id : int, conn : Optional[socket.socket]) -> None:
+    def __init__(self, x: int, y: int, id: int, color: Color, conn: Optional[socket.socket]) -> None:
         self.x = x
         self.y = y
         self.id = id
+        self.color = color
         self.conn = conn
     
     def __str__(self) -> str:
